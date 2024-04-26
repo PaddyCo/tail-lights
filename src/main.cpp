@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include <FastLED.h>
-#define DATA_PIN 9
-#define CLOCK_PIN 21
-#define BLINKER_LEFT_PIN 51
-#define BLINKER_RIGHT_PIN 50
-#define BRAKE_PIN 52
+#define DATA_PIN PORTD3
+#define CLOCK_PIN SCK
+#define BLINKER_LEFT_PIN PORTD7
+#define BLINKER_RIGHT_PIN PORTD6
+#define BRAKE_PIN PORTD5
+#define IGNITION_PIN PORTD4
 #define NUM_LEDS 30
 #define COLOR_ORDER BGR
 #define GLOBAL_BRIGHTNESS 255
@@ -34,21 +35,21 @@ void setup() {
     // TODO: Remove this when done, this is just to test the startup animation
     delay(1000);
 
-    for(int i = 0; i < sizeof(brakeLightLed); i++) { 
+    for(uint8_t i = 0; i < sizeof(brakeLightLed); i++) {
         brakeLightLed[i] = NUM_LEDS+1;
     }
 
     prevFrameTime = millis();
 }
 
-#define STARTUP_ANIMATION_SPEED 20
+#define STARTUP_ANIMATION_SPEED 20 
 void startupAnimation(uint32_t deltaTime) {
     startupAnimationProgress += deltaTime;
 
-    CRGB color = CRGB::Red;
+    CRGB color = CRGB::Blue;
     uint8_t centerLed = NUM_LEDS/2;
 
-    for(int dot = 0; dot < NUM_LEDS; dot++) { 
+    for(uint8_t dot = 0; dot < NUM_LEDS; dot++) {
         uint8_t offset = abs(centerLed - dot);
         if (offset < startupAnimationProgress/STARTUP_ANIMATION_SPEED) {
             leds[dot] = color; 
@@ -61,7 +62,7 @@ void startupAnimation(uint32_t deltaTime) {
 void brakeLightAnimation(uint32_t deltaTime) {
     uint8_t centerLed = NUM_LEDS/2;
     CRGB color = CRGB::Red;
-    for (int i = 0; i < sizeof(brakeLightLed); i++) {
+    for (uint8_t i = 0; i < sizeof(brakeLightLed); i++) {
         uint8_t led = brakeLightLed[i];
         if (led < 0 || led > NUM_LEDS) {
             continue;
@@ -95,14 +96,13 @@ void brakeLightAnimation(uint32_t deltaTime) {
 
 // the loop routine runs over and over again forever:
 void loop() {
-
     uint32_t deltaTime = millis() - prevFrameTime;
 
     FastLED.setBrightness(GLOBAL_BRIGHTNESS);
 
-    if (!digitalRead(BRAKE_PIN)) {
+    if (digitalRead(BRAKE_PIN) == LOW) {
         uint8_t centerLed = NUM_LEDS/2;
-        
+
         brakeLightLed[brakeLightIndex] = centerLed;
         brakeLightIndex++;
         brakeLightLed[brakeLightIndex] = centerLed-1;
@@ -115,15 +115,16 @@ void loop() {
 
     startupAnimation(deltaTime);
     brakeLightAnimation(deltaTime);
+
     CRGB blinkerColor = CRGB::Yellow;
 
-    if (!digitalRead(BLINKER_LEFT_PIN)) {
+    if (digitalRead(BLINKER_LEFT_PIN) == LOW) {
         leds[0] = blinkerColor;
         leds[1] = blinkerColor;
         leds[2] = blinkerColor;
     }
 
-    if (!digitalRead(BLINKER_RIGHT_PIN)) {
+    if (digitalRead(BLINKER_RIGHT_PIN) == LOW) {
         leds[NUM_LEDS-1] = blinkerColor;
         leds[NUM_LEDS-2] = blinkerColor;
         leds[NUM_LEDS-3] = blinkerColor;
